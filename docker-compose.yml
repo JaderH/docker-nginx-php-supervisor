@@ -10,5 +10,4 @@ services:
       TZ: Asia/Shanghai
     volumes:
       - /Users/jade/MingYuanYun/code:/webser/www
-      - ./config/cl-mall.conf:/etc/nginx/conf.d/cl-mall.conf
-      - ./config/php-monitor.conf:/etc/nginx/conf.d/php-monitor.conf
+      - ./config/mt.conf:/etc/nginx/conf.d/mt.conf
