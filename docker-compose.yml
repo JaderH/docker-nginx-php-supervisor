@@ -2,7 +2,7 @@ version: '3.5'
 
 services:
   app:
-    build: .
+    image: jaderh/docker-nginx-php-supervisor:mt
     ports:
       - 80:80
       - 443:443

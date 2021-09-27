@@ -22,7 +22,7 @@ RUN apk update \
 	&& apk add nginx supervisor vim curl tzdata \
     php8 php8-fpm php8-pgsql php8-bcmath php8-ctype php8-curl php8-dom php8-fileinfo php8-gd php8-iconv \
     php8-mbstring php8-openssl php8-intl php8-phar php8-posix php8-imap php8-soap php8-ldap php8-xmlwriter  \
-    php8-tokenizer php8-redis php8-pdo php8-pdo_mysql php8-pdo_sqlite php8-xml php8-zip \
+    php8-tokenizer php8-redis php8-pdo php8-pdo_mysql php8-pdo_sqlite php8-xml php8-simplexml php8-zip \
     && cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
     && cp /usr/bin/php8 /usr/bin/php \
 	&& echo "${TIMEZONE}" > /etc/timezone \
