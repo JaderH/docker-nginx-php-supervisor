@@ -3,6 +3,7 @@ version: '3.5'
 services:
   app:
     build: .
+    container_name: Jade-app
     ports:
       - 80:80
       - 443:443
@@ -10,5 +11,29 @@ services:
       TZ: Asia/Shanghai
     volumes:
       - /Users/jade/MingYuanYun/code:/webser/www
-      - ./config/cl-mall.conf:/etc/nginx/conf.d/cl-mall.conf
-      - ./config/php-monitor.conf:/etc/nginx/conf.d/php-monitor.conf
+      - ./config/mysoft-vat.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      server_network:
+        ipv4_address: 172.16.110.11
+
+  redis:
+    image: redis:5.0.5-alpine3.10
+    container_name: Jade-redis
+    command: redis-server --requirepass Jade@root
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis/data:/data
+    environment:
+      - TZ=Asia/Shanghai
+    networks:
+      server_network:
+        ipv4_address: 172.16.110.13
+networks:
+  server_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.110.0/24
+          gateway: 172.16.110.1
