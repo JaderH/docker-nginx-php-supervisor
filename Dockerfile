@@ -24,7 +24,7 @@ RUN apk update \
 	&& apk add nginx supervisor vim curl tzdata \
     php7 php7-fpm php7-amqp php7-bcmath php7-ctype php7-curl php7-dom php7-fileinfo php7-gd php7-iconv \
     php7-json php7-mbstring php7-mysqlnd php7-openssl php7-pdo php7-pdo_mysql php7-pdo_sqlite php7-phar php7-posix \
-    php7-redis php7-session php7-simplexml php7-sockets php7-sqlite3 php7-tokenizer php7-pecl-mcrypt \
+    php7-redis php7-session php7-simplexml php7-sockets php7-sqlite3 php7-mongodb php7-tokenizer php7-pecl-mcrypt \
     php7-xml php7-xmlreader php7-xmlwriter php7-opcache php7-zip \
     && cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
 	&& echo "${TIMEZONE}" > /etc/timezone \
@@ -37,12 +37,12 @@ ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
 RUN rm -rf /var/cache/apk/*
 
 # install the xhprof extension to profile requests
-#RUN curl "https://github.com/tideways/php-xhprof-extension/releases/download/v5.0.4/tideways-xhprof-5.0.4-x86_64.tar.gz" -fsL -o ./tideways_xhprof.tar.gz \
-#    && tar xf ./tideways_xhprof.tar.gz \
-#    && cp ./tideways_xhprof-5.0.4/tideways_xhprof-7.3.so /usr/lib/php7/modules/tideways_xhprof.so \
-#    && chmod 755 /usr/lib/php7/modules/tideways_xhprof.so \
-#    && echo "extension=tideways_xhprof.so" >> /etc/php7/conf.d/tideways_xhprof.ini \
-#    && rm -rf ./tideways_xhprof.tar.gz ./tideways_xhprof-5.0.4 \
+RUN curl "https://github.com/tideways/php-xhprof-extension/releases/download/v5.0.4/tideways-xhprof-5.0.4-x86_64.tar.gz" -fsL -o ./tideways_xhprof.tar.gz \
+    && tar xf ./tideways_xhprof.tar.gz
+RUN cp ./tideways_xhprof-5.0.4/tideways_xhprof-7.4.so /usr/lib/php7/modules/tideways_xhprof.so \
+    && chmod 755 /usr/lib/php7/modules/tideways_xhprof.so \
+    && echo "extension=tideways_xhprof.so" >> /etc/php7/conf.d/tideways_xhprof.ini \
+    && rm -rf ./tideways_xhprof*
 
 # set environments
 RUN sed -i "s|;*date.timezone =.*|date.timezone = ${TIMEZONE}|i" /etc/php7/php.ini && \
