@@ -1,9 +1,9 @@
-FROM alpine:3.13
+FROM alpine:3.8
 
 LABEL maintainer="Jade <hmy940118@gmail.com>"
 
 # mirrors
-RUN set -eux && sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
+RUN set -eux && sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # php.ini
 ENV TIMEZONE            Asia/Shanghai
@@ -20,42 +20,69 @@ RUN set -eux; \
 
 # install service
 RUN apk update \
-	&& apk upgrade \
 	&& apk add nginx supervisor vim curl tzdata \
-    php7 php7-fpm php7-amqp php7-bcmath php7-ctype php7-curl php7-dom php7-fileinfo php7-gd php7-iconv \
-    php7-json php7-mbstring php7-mysqlnd php7-openssl php7-pdo php7-pdo_mysql php7-pdo_sqlite php7-phar php7-posix \
-    php7-redis php7-session php7-simplexml php7-sockets php7-sqlite3 php7-mongodb php7-tokenizer php7-pecl-mcrypt \
-    php7-xml php7-xmlreader php7-xmlwriter php7-opcache php7-zip \
+    php5 php5-fpm php5-bz2 php5-bcmath php5-ctype php5-curl php5-dom php5-ftp php5-gd php5-gettext php5-iconv php5-intl \
+    php5-json php5-mysql php5-mysqli php5-openssl php5-pdo php5-pdo_mysql php5-pdo_sqlite php5-pcntl php5-phar php5-posix \
+    php5-shmop php5-soap php5-sockets php5-sqlite3 php5-mcrypt php5-xml php5-xmlreader php5-xmlrpc php5-opcache php5-zip \
     && cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
 	&& echo "${TIMEZONE}" > /etc/timezone \
 	&& apk del tzdata \
  	&& rm -rf /var/cache/apk/*
 
 # https://github.com/docker-library/php/issues/240
-RUN apk add --no-cache --repository http://mirrors.ustc.edu.cn/alpine/edge/community gnu-libiconv
+RUN apk add --no-cache --repository http://mirrors.aliyun.com/alpine/edge/community gnu-libiconv
 ENV LD_PRELOAD /usr/lib/preloadable_libiconv.so php
 RUN rm -rf /var/cache/apk/*
 
-# install the xhprof extension to profile requests
-RUN curl "https://github.com/tideways/php-xhprof-extension/releases/download/v5.0.4/tideways-xhprof-5.0.4-x86_64.tar.gz" -fsL -o ./tideways_xhprof.tar.gz \
-    && tar xf ./tideways_xhprof.tar.gz
-RUN cp ./tideways_xhprof-5.0.4/tideways_xhprof-7.4.so /usr/lib/php7/modules/tideways_xhprof.so \
-    && chmod 755 /usr/lib/php7/modules/tideways_xhprof.so \
-    && echo "extension=tideways_xhprof.so" >> /etc/php7/conf.d/tideways_xhprof.ini \
-    && rm -rf ./tideways_xhprof*
+# install dependency
+RUN apk add autoconf g++ make icu-dev libxslt-dev php5-dev rabbitmq-c rabbitmq-c-dev && \
+    ln -s /usr/bin/php5 /usr/bin/php && ln -s /usr/bin/phpize5 /usr/bin/phpize
+
+# install memcached and redis
+COPY pkg/sgerrand.rsa.pub /etc/apk/keys/sgerrand.rsa.pub
+COPY pkg/php5-memcached-2.2.0-r0.apk /tmp/php5-memcached-2.2.0-r0.apk
+COPY pkg/php5-redis-3.1.6-r0.apk /tmp/php5-redis-3.1.6-r0.apk
+COPY pkg/igbinary-2.0.6.tar.gz /tmp/igbinary-2.0.6.tar.gz
+COPY pkg/amqp-1.11.0.tgz /tmp/amqp-1.11.0.tgz
+COPY pkg/memcache-2.2.7.tgz /tmp/memcache-2.2.7.tgz
+
+RUN cd /tmp && apk add php5-memcached-2.2.0-r0.apk && apk add php5-redis-3.1.6-r0.apk
+
+# install memcache
+RUN cd /tmp && \
+    tar xf memcache-2.2.7.tgz && cd memcache-2.2.7 && \
+    phpize && ./configure --with-php-config=/usr/bin/php-config5 && make && make install && \
+    echo "extension=memcache.so" >> /etc/php5/conf.d/memcache.ini 
+
+# install igbinary 
+RUN cd /tmp && \
+    tar xf igbinary-2.0.6.tar.gz && cd igbinary-2.0.6 && \
+    phpize && ./configure --with-php-config=/usr/bin/php-config5 && make && make install && \
+    echo "extension=igbinary.so" >> /etc/php5/conf.d/igbinary.ini 
+
+# install amqp
+RUN cd /tmp && \
+    tar xf amqp-1.11.0.tgz && cd amqp-1.11.0 &&\
+    phpize && ./configure --with-php-config=/usr/bin/php-config5 -with-amqp && \
+    make && make install && \
+    echo "extension=amqp.so" >> /etc/php5/conf.d/amqp.ini
+
+# clear
+RUN rm -rf /tmp/* && \
+    apk del autoconf g++ make icu-dev libxslt-dev php5-dev
 
 # set environments
-RUN sed -i "s|;*date.timezone =.*|date.timezone = ${TIMEZONE}|i" /etc/php7/php.ini && \
-	sed -i "s|;*memory_limit =.*|memory_limit = ${PHP_MEMORY_LIMIT}|i" /etc/php7/php.ini && \
-	sed -i "s|;*upload_max_filesize =.*|upload_max_filesize = ${MAX_UPLOAD}|i" /etc/php7/php.ini && \
-	sed -i "s|;*max_file_uploads =.*|max_file_uploads = ${PHP_MAX_FILE_UPLOAD}|i" /etc/php7/php.ini && \
-	sed -i "s|;*post_max_size =.*|post_max_size = ${PHP_MAX_POST}|i" /etc/php7/php.ini && \
-	sed -i "s|;*cgi.fix_pathinfo=.*|cgi.fix_pathinfo= 0|i" /etc/php7/php.ini
+RUN sed -i "s|;*date.timezone =.*|date.timezone = ${TIMEZONE}|i" /etc/php5/php.ini && \
+	sed -i "s|;*memory_limit =.*|memory_limit = ${PHP_MEMORY_LIMIT}|i" /etc/php5/php.ini && \
+	sed -i "s|;*upload_max_filesize =.*|upload_max_filesize = ${MAX_UPLOAD}|i" /etc/php5/php.ini && \
+	sed -i "s|;*max_file_uploads =.*|max_file_uploads = ${PHP_MAX_FILE_UPLOAD}|i" /etc/php5/php.ini && \
+	sed -i "s|;*post_max_size =.*|post_max_size = ${PHP_MAX_POST}|i" /etc/php5/php.ini && \
+	sed -i "s|;*cgi.fix_pathinfo=.*|cgi.fix_pathinfo= 0|i" /etc/php5/php.ini
 
 # service config
 COPY config/supervisord.conf /etc/supervisord.conf
 COPY config/nginx.conf /etc/nginx/nginx.conf
-COPY config/www.conf /etc/php7/php-fpm.d/www.conf
+COPY config/www.conf /etc/php5/php-fpm.d/www.conf
 
 # composer
 RUN curl -sS https://getcomposer.org/installer | \
