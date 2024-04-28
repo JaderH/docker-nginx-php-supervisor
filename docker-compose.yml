@@ -1,14 +1,40 @@
-version: '3.5'
+version: "3.8"
 
 services:
   app:
-    build: .
+    container_name: app
+    image: jaderh/docker-nginx-php-supervisor:8.3
     ports:
       - 80:80
       - 443:443
+      # - 8787:8787
+      # - 9501:9501
     environment:
       TZ: Asia/Shanghai
     volumes:
-      - /Users/jade/MingYuanYun/code:/webser/www
-      - ./config/cl-mall.conf:/etc/nginx/conf.d/cl-mall.conf
-      - ./config/php-monitor.conf:/etc/nginx/conf.d/php-monitor.conf
+      # - /Users/jade/Jader/Code/:/webser/www/
+      - /Users/jade/Jader/Code/hyperf-test:/webser/www/hyperf-test
+      - /Users/jade/Jader/Code/webman-test:/webser/www/webman-test
+      - /Users/jade/Jader/Code/laravel-test:/webser/www/laravel-test
+      - /Users/jade/Jader/Code/thinkphp-test:/webser/www/thinkphp-test
+      # - ./config/cl-mall.conf:/etc/nginx/conf.d/cl-mall.conf
+      - ./config/dev.conf:/etc/nginx/conf.d/dev.conf
+      # - ./config/php-monitor.conf:/etc/nginx/conf.d/php-monitor.conf
+      - ./config/supervisor-php.ini:/etc/supervisor.d/supervisor-php.ini
+    networks:
+      - app-network
+
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: Jade@1994
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
