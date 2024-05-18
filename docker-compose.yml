@@ -7,7 +7,8 @@ services:
     ports:
       - 80:80
       - 443:443
-      # - 8787:8787
+      - 8787:8787
+      - 8585:8585
       # - 9501:9501
     environment:
       TZ: Asia/Shanghai
@@ -17,6 +18,7 @@ services:
       - /Users/jade/Jader/Code/webman-test:/webser/www/webman-test
       - /Users/jade/Jader/Code/laravel-test:/webser/www/laravel-test
       - /Users/jade/Jader/Code/thinkphp-test:/webser/www/thinkphp-test
+      - /Users/jade/Jader/Custom/PsyWeb:/webser/www/psy-test
       # - ./config/cl-mall.conf:/etc/nginx/conf.d/cl-mall.conf
       - ./config/dev.conf:/etc/nginx/conf.d/dev.conf
       # - ./config/php-monitor.conf:/etc/nginx/conf.d/php-monitor.conf
