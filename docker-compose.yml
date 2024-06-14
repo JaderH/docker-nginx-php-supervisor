@@ -24,19 +24,30 @@ services:
       # - ./config/php-monitor.conf:/etc/nginx/conf.d/php-monitor.conf
       - ./config/supervisor-php.ini:/etc/supervisor.d/supervisor-php.ini
     networks:
-      - app-network
+      server_network:
+        ipv4_address: 172.16.120.11
 
   db:
-    image: mysql
+    container_name: db
+    image: mysql:5.7.40
     command: --default-authentication-plugin=mysql_native_password
     restart: always
     ports:
       - 3306:3306
+    volumes:
+      - /Users/jade/Jader/MysqlData/57:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: Jade@1994
+      TZ: Asia/Shanghai
     networks:
-      - app-network
+      server_network:
+        ipv4_address: 172.16.120.13
 
 networks:
-  app-network:
+  server_network:
     driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.120.0/24
+          gateway: 172.16.120.1
